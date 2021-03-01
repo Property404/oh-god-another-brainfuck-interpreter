@@ -10,6 +10,7 @@ enum Token{
     Goto(usize),
     Put,
     Get,
+    Zero,
 }
 
 impl Token{
@@ -39,8 +40,13 @@ fn tokenize(code: &str) -> Vec<Token>
 
         match c {
             '[' => {
-                skip_stack.push(tokens.len());
-                tokens.push(Token::Skip(0));
+                if i < code.len()+2 && code[i+1] as char == '-' && code[i+2]  as char== ']' {
+                    tokens.push(Token::Zero);
+                    i += 2;
+                } else { 
+                    skip_stack.push(tokens.len());
+                    tokens.push(Token::Skip(0));
+                }
             },
             ']' => {
                 if let Some(popped) = skip_stack.pop() {
@@ -107,7 +113,9 @@ fn interpret(tokens: &Vec<Token>)
     let mut data_pointer:isize = 0;
 
     let mut instruction_pointer = 0;
-    while instruction_pointer < tokens.len()
+
+    let tokens_len = tokens.len();
+    while instruction_pointer < tokens_len
     {
         let token = &(tokens[instruction_pointer]);
         //token.print();
@@ -118,14 +126,16 @@ fn interpret(tokens: &Vec<Token>)
                 if data_pointer < 0 {
                     println!("Time to panic!");
                 }
-            },
-            Token::Add(amount) => {
-                tape.reserve(1 + data_pointer as usize);
                 while tape.len() < 1 + data_pointer as usize {
                     tape.push(0);
                 }
+            },
+            Token::Add(amount) => {
                 let idx = data_pointer as usize;
                 tape[idx] = (tape[idx] as isize + amount) as u8;
+            },
+            Token::Zero => {
+                tape[data_pointer as usize] = 0;
             },
             Token::Put => {
                 print!("{}", tape[data_pointer as usize] as char);
@@ -133,9 +143,6 @@ fn interpret(tokens: &Vec<Token>)
             Token::Get => {
             },
             Token::Skip(location) => {
-                while tape.len() < 1 + data_pointer as usize {
-                    tape.push(0);
-                }
                 if tape[data_pointer as usize] == 0 {
                     instruction_pointer = *location;
                 };
