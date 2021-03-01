@@ -115,6 +115,7 @@ fn interpret(tokens: &Vec<Token>)
     let mut instruction_pointer = 0;
 
     let tokens_len = tokens.len();
+    tape.push(0);
     while instruction_pointer < tokens_len
     {
         let token = &(tokens[instruction_pointer]);
