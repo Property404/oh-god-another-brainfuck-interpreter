@@ -30,9 +30,12 @@ fn tokenize(code: &str) -> Vec<Token>
     let mut tokens: Vec<Token> = Vec::new();
     let mut skip_stack = Vec::new();
 
+    let code = code.as_bytes();
+
     tokens.push(Token::Start);
-    for i in 0..code.as_bytes().len() {
-        let c = code.as_bytes()[i] as char;
+    let mut i=0;
+    while i < code.len() {
+        let c = code[i] as char;
 
         match c {
             '[' => {
@@ -49,10 +52,38 @@ fn tokenize(code: &str) -> Vec<Token>
             },
 
             '>'|'<' => {
-                tokens.push(Token::Shift(if c == '>' {1} else {-1}));
+                let mut value = 0;
+                loop{
+                    let c = code[i] as char;
+                    match c {
+                        '>' => value += 1,
+                        '<' => value -= 1,
+                        _ => break
+                    };
+                    i+=1;
+                    if i >= code.len() {
+                        break;
+                    }
+                };
+                i -= 1;
+                tokens.push(Token::Shift(value));
             },
             '+'|'-' => {
-                tokens.push(Token::Add(if c == '+' {1} else {-1}));
+                let mut value = 0;
+                loop{
+                    let c = code[i] as char;
+                    match c {
+                        '+' => value += 1,
+                        '-' => value -= 1,
+                        _ => break
+                    };
+                    i+=1;
+                    if i >= code.len() {
+                        break;
+                    }
+                };
+                i -= 1;
+                tokens.push(Token::Add(value));
             },
             '.' => {
                 tokens.push(Token::Put);
@@ -64,6 +95,7 @@ fn tokenize(code: &str) -> Vec<Token>
             _ =>{}
         }
 
+        i += 1
     };
 
     tokens
@@ -99,7 +131,6 @@ fn interpret(tokens: &Vec<Token>)
                 print!("{}", tape[data_pointer as usize] as char);
             },
             Token::Get => {
-                println!("Get not implemented");
             },
             Token::Skip(location) => {
                 while tape.len() < 1 + data_pointer as usize {
